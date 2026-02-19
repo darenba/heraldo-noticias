@@ -22,6 +22,15 @@ class ArticleService
      */
     public function search(string $query = '', array $filters = []): LengthAwarePaginator
     {
+        try {
+            return $this->searchViaDb($query, $filters);
+        } catch (\Exception $e) {
+            return $this->searchViaRest($query, $filters);
+        }
+    }
+
+    private function searchViaDb(string $query, array $filters): LengthAwarePaginator
+    {
         $builder = Article::with('tags')->orderBy('publication_date', 'desc');
 
         // Full-text search using PostgreSQL tsvector
@@ -62,6 +71,18 @@ class ArticleService
         }
 
         return $builder->paginate(self::PER_PAGE);
+    }
+
+    private function searchViaRest(string $query, array $filters): LengthAwarePaginator
+    {
+        $rest = new SupabaseRestService();
+        if (! $rest->available()) {
+            return new \Illuminate\Pagination\LengthAwarePaginator([], 0, self::PER_PAGE);
+        }
+
+        $page = (int) request()->get('page', 1);
+
+        return $rest->searchArticles($query, $filters, $page, self::PER_PAGE);
     }
 
     /**
@@ -123,11 +144,16 @@ class ArticleService
      */
     public function getSections(): array
     {
-        return Article::select('section')
-            ->whereNotNull('section')
-            ->distinct()
-            ->orderBy('section')
-            ->pluck('section')
-            ->toArray();
+        try {
+            return Article::select('section')
+                ->whereNotNull('section')
+                ->distinct()
+                ->orderBy('section')
+                ->pluck('section')
+                ->toArray();
+        } catch (\Exception $e) {
+            $rest = new SupabaseRestService();
+            return $rest->available() ? $rest->getSections() : [];
+        }
     }
 }
