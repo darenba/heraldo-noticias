@@ -20,10 +20,17 @@ class ArticleController extends Controller
         $query = $request->get('q', '');
         $filters = $request->only(['section', 'date_from', 'date_to', 'tag']);
 
-        $articles = $this->articleService->search($query, $filters);
-        $sections = $this->articleService->getSections();
+        try {
+            $articles = $this->articleService->search($query, $filters);
+            $sections = $this->articleService->getSections();
+            $dbError = false;
+        } catch (\Exception $e) {
+            $articles = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 20);
+            $sections = [];
+            $dbError = true;
+        }
 
-        return view('public.index', compact('articles', 'sections', 'query', 'filters'));
+        return view('public.index', compact('articles', 'sections', 'query', 'filters', 'dbError'));
     }
 
     public function show(Article $article): View

@@ -13,18 +13,22 @@ class DashboardController extends Controller
 {
     public function index(): View
     {
-        $totalEditions = Edition::count();
-        $totalArticles = Article::count();
-        $processingCount = Edition::where('status', 'processing')->orWhere('status', 'pending')->count();
-        $errorCount = Edition::where('status', 'error')->count();
-        $recentEditions = Edition::latest()->take(10)->get();
+        try {
+            $totalEditions = Edition::count();
+            $totalArticles = Article::count();
+            $processingCount = Edition::where('status', 'processing')->orWhere('status', 'pending')->count();
+            $errorCount = Edition::where('status', 'error')->count();
+            $recentEditions = Edition::latest()->take(10)->get();
+            $dbError = false;
+        } catch (\Exception $e) {
+            $totalEditions = $totalArticles = $processingCount = $errorCount = 0;
+            $recentEditions = collect([]);
+            $dbError = true;
+        }
 
         return view('admin.dashboard', compact(
-            'totalEditions',
-            'totalArticles',
-            'processingCount',
-            'errorCount',
-            'recentEditions'
+            'totalEditions', 'totalArticles', 'processingCount',
+            'errorCount', 'recentEditions', 'dbError'
         ));
     }
 }
