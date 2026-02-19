@@ -30,8 +30,11 @@ require __DIR__ . '/../vendor/autoload.php';
 // ── Bootstrap Laravel ─────────────────────────────────────────────────────
 $app = require_once __DIR__ . '/../bootstrap/app.php';
 
-// Point writable runtime storage to /tmp (Vercel's only writable dir)
+// Point writable runtime dirs to /tmp (only writable dir in Vercel lambdas)
+// useStoragePath: cache/data, views, sessions, logs
+// useBootstrapPath: bootstrap/cache (packages.php, config.php, routes.php)
 $app->useStoragePath('/tmp/storage');
+$app->useBootstrapPath('/tmp/bootstrap');
 
 // ── Handle the request ────────────────────────────────────────────────────
 $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
