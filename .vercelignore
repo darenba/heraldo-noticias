@@ -1,0 +1,4 @@
+# Exclude Laravel's traditional web entry point from Vercel's static output.
+# Vercel uses api/index.php as the PHP serverless function entry point instead.
+public/index.php
+public/.htaccess
