@@ -21,7 +21,7 @@ Route::post('/admin/logout', [AdminLoginController::class, 'logout'])->name('adm
 
 // ── Admin panel (protected) ────────────────────────────────────────────────
 Route::prefix('admin')
-    ->middleware(['auth', 'admin'])
+    ->middleware(['admin'])
     ->name('admin.')
     ->group(function () {
         // Dashboard
