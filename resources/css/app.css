@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    body {
+        @apply font-sans;
+    }
+}
+
+@layer components {
+    .article-body {
+        @apply text-lg leading-relaxed text-heraldo-sepia-900;
+        font-family: 'Crimson Text', 'Times New Roman', serif;
+    }
+
+    .article-title {
+        @apply font-bold text-heraldo-ink;
+        font-family: 'Playfair Display', Georgia, serif;
+    }
+
+    .section-badge {
+        @apply inline-block px-2 py-0.5 text-xs font-semibold uppercase tracking-widest
+               bg-heraldo-sepia-200 text-heraldo-sepia-700 rounded;
+    }
+
+    .tag-pill {
+        @apply inline-block px-2 py-0.5 text-xs font-medium
+               bg-heraldo-sepia-100 text-heraldo-sepia-700
+               border border-heraldo-sepia-200 rounded-full
+               hover:bg-heraldo-sepia-200 hover:text-heraldo-sepia-900
+               transition-colors duration-150;
+    }
+
+    .search-input {
+        @apply w-full border border-heraldo-sepia-200 rounded px-4 py-3
+               text-heraldo-sepia-900 bg-white placeholder-heraldo-sepia-300
+               focus:outline-none focus:border-heraldo-gold focus:ring-1 focus:ring-heraldo-gold;
+    }
+
+    .btn-primary {
+        @apply bg-heraldo-sepia-900 text-heraldo-sepia-50 px-6 py-3 rounded
+               font-medium hover:bg-heraldo-ink transition-colors duration-150;
+    }
+}
