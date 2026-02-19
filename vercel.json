@@ -6,33 +6,27 @@
       "maxDuration": 60
     }
   },
-  "build": {
-    "env": {
-      "COMPOSER_NO_INTERACTION": "1"
-    }
-  },
   "installCommand": "composer install --no-dev --optimize-autoloader --no-scripts",
-  "routes": [
-    { "src": "/build/(.*)", "dest": "/build/$1" },
-    { "src": "/storage/app/public/(.*)", "dest": "/storage/app/public/$1" },
-    { "src": "/(.*)", "dest": "/api/index.php" }
+  "rewrites": [
+    { "source": "/build/:path*",   "destination": "/build/:path*" },
+    { "source": "/:path*",         "destination": "/api/index.php" }
   ],
-  "env": {
-    "APP_ENV": "production",
-    "APP_DEBUG": "false",
-    "LOG_CHANNEL": "stderr",
-    "FILESYSTEM_DISK": "local",
-    "SESSION_DRIVER": "cookie"
-  },
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-Frame-Options", "value": "DENY" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "X-XSS-Protection", "value": "1; mode=block" }
+        { "key": "X-Content-Type-Options",  "value": "nosniff" },
+        { "key": "X-Frame-Options",          "value": "DENY" },
+        { "key": "Referrer-Policy",          "value": "strict-origin-when-cross-origin" },
+        { "key": "X-XSS-Protection",         "value": "1; mode=block" }
       ]
     }
-  ]
+  ],
+  "env": {
+    "APP_ENV":        "production",
+    "APP_DEBUG":      "false",
+    "LOG_CHANNEL":    "stderr",
+    "FILESYSTEM_DISK":"local",
+    "SESSION_DRIVER": "cookie"
+  }
 }
