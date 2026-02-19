@@ -152,14 +152,14 @@
         <div class="mt-8 border-t border-slate-200 pt-6">
             <h3 class="text-sm font-medium text-slate-700 mb-2">¿Cómo funciona?</h3>
             <ol class="text-sm text-slate-600 space-y-1 list-decimal list-inside">
-                <li>Sube el PDF — se guarda en el servidor</li>
-                <li>El sistema extrae el texto página por página</li>
-                <li>Las noticias se identifican por sus titulares en mayúsculas</li>
-                <li>Se generan palabras clave automáticamente (TF-IDF)</li>
-                <li>Las noticias quedan disponibles en el portal de búsqueda</li>
+                <li>Sube el PDF — se procesa durante la solicitud</li>
+                <li>El sistema extrae el texto página por página (PDF parser)</li>
+                <li>Claude AI clasifica cada artículo con título, sección y palabras clave</li>
+                <li>Si Claude no está disponible, se usa segmentación heurística como respaldo</li>
+                <li>Los artículos quedan disponibles en el portal de búsqueda</li>
             </ol>
             <p class="text-xs text-slate-400 mt-3">
-                Tiempo estimado: 2-5 minutos para una edición de 28 páginas.
+                Tiempo estimado: 30-60 segundos para una edición de 28 páginas.
             </p>
         </div>
     </div>

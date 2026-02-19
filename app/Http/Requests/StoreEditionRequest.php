@@ -11,7 +11,8 @@ class StoreEditionRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return Auth::check() && Auth::user()->role === 'admin';
+        // AdminMiddleware already verified auth — avoid a redundant DB lookup here.
+        return Auth::check() && optional(Auth::user())->role === 'admin';
     }
 
     public function rules(): array

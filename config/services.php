@@ -30,4 +30,8 @@ return [
         'storage_bucket' => env('SUPABASE_STORAGE_BUCKET', 'heraldo-pdfs'),
     ],
 
+    'anthropic' => [
+        'api_key' => env('ANTHROPIC_API_KEY', ''),
+    ],
+
 ];

@@ -23,10 +23,12 @@
     }
   ],
   "env": {
-    "APP_ENV":         "production",
-    "APP_DEBUG":       "false",
-    "LOG_CHANNEL":     "stderr",
-    "FILESYSTEM_DISK": "local",
-    "SESSION_DRIVER":  "cookie"
+    "APP_ENV":          "production",
+    "APP_DEBUG":        "false",
+    "LOG_CHANNEL":      "stderr",
+    "FILESYSTEM_DISK":  "local",
+    "SESSION_DRIVER":   "cookie",
+    "QUEUE_CONNECTION": "sync",
+    "CACHE_STORE":      "array"
   }
 }

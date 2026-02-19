@@ -10,7 +10,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 
 /**
- * Fallback service that reads from Supabase PostgREST API (port 443/HTTPS)
+ * Fallback service that reads/writes via Supabase PostgREST API (port 443/HTTPS)
  * when the native PostgreSQL pooler is unavailable.
  */
 class SupabaseRestService
@@ -112,10 +112,174 @@ class SupabaseRestService
     public function recentEditions(int $limit = 10): array
     {
         return $this->get('editions', [
-            'select' => 'id,edition_date,newspaper_name,status,created_at,file_path,page_count',
+            'select' => 'id,publication_date,newspaper_name,status,created_at,file_path,total_pages,total_articles',
             'order'  => 'created_at.desc',
             'limit'  => $limit,
         ]);
+    }
+
+    // ── Write operations (INSERT / UPDATE / UPSERT) ─────────────────────────
+
+    /**
+     * Insert a row and return the created record (with id).
+     *
+     * @param array<string,mixed> $data
+     * @return array<string,mixed>
+     */
+    public function insert(string $table, array $data): array
+    {
+        $url = $this->baseUrl . '/' . $table;
+
+        $context = stream_context_create(['http' => [
+            'method'        => 'POST',
+            'header'        => $this->headers(['Content-Type: application/json', 'Prefer: return=representation']),
+            'content'       => json_encode($data),
+            'ignore_errors' => true,
+        ]]);
+
+        $body = @file_get_contents($url, false, $context);
+        $rows = is_string($body) ? (json_decode($body, true) ?? []) : [];
+
+        return is_array($rows) && isset($rows[0]) ? $rows[0] : [];
+    }
+
+    /**
+     * Update rows matching conditions. Returns true on success.
+     *
+     * @param array<string,string> $conditions  e.g. ['id' => 'eq.5']
+     * @param array<string,mixed>  $data
+     */
+    public function update(string $table, array $conditions, array $data): bool
+    {
+        $url = $this->baseUrl . '/' . $table . '?' . http_build_query($conditions);
+
+        $context = stream_context_create(['http' => [
+            'method'        => 'PATCH',
+            'header'        => $this->headers(['Content-Type: application/json', 'Prefer: return=minimal']),
+            'content'       => json_encode($data),
+            'ignore_errors' => true,
+        ]]);
+
+        @file_get_contents($url, false, $context);
+
+        foreach ($http_response_header ?? [] as $h) {
+            if (preg_match('/HTTP\/\d\.\d\s+2\d\d/', $h)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Upsert a row (insert or update on conflict). Returns the row.
+     *
+     * @param array<string,mixed> $data
+     * @param string              $onConflict  column(s) to conflict on, comma-separated
+     * @return array<string,mixed>
+     */
+    public function upsert(string $table, array $data, string $onConflict = 'id'): array
+    {
+        $url = $this->baseUrl . '/' . $table;
+
+        $context = stream_context_create(['http' => [
+            'method'        => 'POST',
+            'header'        => $this->headers([
+                'Content-Type: application/json',
+                'Prefer: return=representation,resolution=merge-duplicates',
+                "on_conflict: {$onConflict}",
+            ]),
+            'content'       => json_encode($data),
+            'ignore_errors' => true,
+        ]]);
+
+        $body = @file_get_contents($url, false, $context);
+        $rows = is_string($body) ? (json_decode($body, true) ?? []) : [];
+
+        return is_array($rows) && isset($rows[0]) ? $rows[0] : [];
+    }
+
+    /**
+     * Get a single row by a single condition.
+     *
+     * @param array<string,string> $conditions  e.g. ['name' => 'eq.foo']
+     * @return array<string,mixed>|null
+     */
+    public function findOne(string $table, array $conditions): ?array
+    {
+        $params = array_merge($conditions, ['limit' => 1]);
+        $rows = $this->get($table, $params);
+        return $rows[0] ?? null;
+    }
+
+    /**
+     * First or create: find by $search keys, or insert $search + $extra.
+     *
+     * @param array<string,mixed> $search
+     * @param array<string,mixed> $extra
+     * @return array<string,mixed>
+     */
+    public function firstOrCreate(string $table, array $search, array $extra = []): array
+    {
+        // Build eq. conditions for the search
+        $conditions = [];
+        foreach ($search as $col => $val) {
+            $conditions[$col] = 'eq.' . $val;
+        }
+
+        $existing = $this->findOne($table, $conditions);
+        if ($existing !== null) {
+            return $existing;
+        }
+
+        return $this->insert($table, array_merge($search, $extra));
+    }
+
+    /**
+     * Insert a pivot record (many-to-many). Ignores conflicts.
+     *
+     * @param array<string,mixed> $data
+     */
+    public function insertPivot(string $table, array $data): bool
+    {
+        $url = $this->baseUrl . '/' . $table;
+
+        $context = stream_context_create(['http' => [
+            'method'        => 'POST',
+            'header'        => $this->headers([
+                'Content-Type: application/json',
+                'Prefer: resolution=ignore-duplicates,return=minimal',
+            ]),
+            'content'       => json_encode($data),
+            'ignore_errors' => true,
+        ]]);
+
+        @file_get_contents($url, false, $context);
+
+        foreach ($http_response_header ?? [] as $h) {
+            if (preg_match('/HTTP\/\d\.\d\s+2\d\d/', $h)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Increment a numeric column by a given amount.
+     */
+    public function increment(string $table, array $conditions, string $column, int $amount = 1): bool
+    {
+        // PostgREST does not support atomic increments via REST directly.
+        // We first fetch the current value, then PATCH.
+        $row = $this->findOne($table, $conditions);
+        if ($row === null) {
+            return false;
+        }
+
+        $current = (int) ($row[$column] ?? 0);
+
+        return $this->update($table, $conditions, [$column => $current + $amount]);
     }
 
     // ── Helpers ─────────────────────────────────────────────────────────────
@@ -150,7 +314,7 @@ class SupabaseRestService
         return 0;
     }
 
-    private function get(string $table, array $params): array
+    public function get(string $table, array $params): array
     {
         $url = $this->baseUrl . '/' . $table . '?' . http_build_query($params);
 

@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Services\SupabaseRestService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Routing\Route;
 
 class Edition extends Model
 {
@@ -67,5 +69,31 @@ class Edition extends Model
     public function isCompleted(): bool
     {
         return $this->status === 'completed';
+    }
+
+    /**
+     * Override route model binding to fall back to REST API if DB is unavailable.
+     */
+    public function resolveRouteBinding($value, $field = null): ?self
+    {
+        try {
+            return parent::resolveRouteBinding($value, $field);
+        } catch (\Exception $e) {
+            $rest = new SupabaseRestService();
+            if (! $rest->available()) {
+                return null;
+            }
+
+            $row = $rest->findOne('editions', ['id' => 'eq.' . $value]);
+            if ($row === null) {
+                return null;
+            }
+
+            $edition = new static();
+            $edition->setRawAttributes($row);
+            $edition->exists = true;
+
+            return $edition;
+        }
     }
 }
