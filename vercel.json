@@ -6,10 +6,9 @@
       "maxDuration": 60
     }
   },
-  "installCommand": "composer install --no-dev --optimize-autoloader --no-scripts",
   "rewrites": [
-    { "source": "/build/:path*",   "destination": "/build/:path*" },
-    { "source": "/:path*",         "destination": "/api/index.php" }
+    { "source": "/build/:path*", "destination": "/build/:path*" },
+    { "source": "/:path*",       "destination": "/api/index.php" }
   ],
   "headers": [
     {
@@ -23,10 +22,10 @@
     }
   ],
   "env": {
-    "APP_ENV":        "production",
-    "APP_DEBUG":      "false",
-    "LOG_CHANNEL":    "stderr",
-    "FILESYSTEM_DISK":"local",
-    "SESSION_DRIVER": "cookie"
+    "APP_ENV":         "production",
+    "APP_DEBUG":       "false",
+    "LOG_CHANNEL":     "stderr",
+    "FILESYSTEM_DISK": "local",
+    "SESSION_DRIVER":  "cookie"
   }
 }
